@@ -17,6 +17,7 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.indianapp.chatapp.Activities.BottomActivity;
 import com.indianapp.chatapp.Adapters.ActiveUserAdapter;
 import com.indianapp.chatapp.Models.UserModel;
@@ -40,6 +41,9 @@ public class ActiveUsersFrag extends Fragment {
 
     private View rootView;
 
+    public static Query query;
+    public static ChildEventListener childEventListener;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -51,7 +55,7 @@ public class ActiveUsersFrag extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        BottomActivity.fragment =null;
+        BottomActivity.fragment = null;
         activeUsersList.clear();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
@@ -61,8 +65,8 @@ public class ActiveUsersFrag extends Fragment {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
-
-        db.getReference().child("users").child(currentUser.getUid()).child("activeUsers").orderByChild("timestamp").addChildEventListener(new ChildEventListener() {
+        query = db.getReference().child("users").child(currentUser.getUid()).child("activeUsers").orderByChild("timestamp");
+        childEventListener = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 Collections.reverse(activeUsersList);
@@ -130,6 +134,9 @@ public class ActiveUsersFrag extends Fragment {
             public void onCancelled(@NonNull DatabaseError error) {
 
             }
-        });
+        };
+
+        query.addChildEventListener(childEventListener);
     }
+
 }

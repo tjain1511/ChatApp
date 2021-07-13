@@ -1,7 +1,6 @@
 package com.indianapp.chatapp.Activities;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -56,11 +55,11 @@ public class ResetPasswordActivity extends AppCompatActivity {
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
-                    Log.i("password", "password not same");
+                    Toast.makeText(ResetPasswordActivity.this, "Some Error occurred", Toast.LENGTH_LONG).show();
                 }
             });
         } else {
-            Log.i("password", "password not same");
+            Toast.makeText(this, "Confirm password not matched", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -76,7 +75,6 @@ public class ResetPasswordActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("offline");
-        Log.i("pass","paused");
         super.onPause();
     }
 

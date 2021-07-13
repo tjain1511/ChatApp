@@ -14,6 +14,7 @@ public class SplashScreen extends AppCompatActivity {
         getWindow().setStatusBarColor(Color.parseColor("#ffffff"));
         Intent intent = new Intent(this, com.indianapp.chatapp.Activities.MainActivity.class);
         startActivity(intent);
+        overridePendingTransition(0,0);
         finish();
     }
 }

@@ -1,12 +1,11 @@
 package com.indianapp.chatapp.Activities;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,6 +56,7 @@ public class SignInActivity extends AppCompatActivity {
     }
 
     public void signIn(View view) {
+        Toast.makeText(SignInActivity.this, "Logging In...", Toast.LENGTH_SHORT).show();
         mAuth.signInWithEmailAndPassword(email.getText().toString(), password.getText().toString())
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
@@ -68,7 +68,7 @@ public class SignInActivity extends AppCompatActivity {
                             overridePendingTransition(0, 0);
                             finish();
                         } else {
-                            Log.i("error","error in signing in");
+                            Toast.makeText(SignInActivity.this, "Some error occurred", Toast.LENGTH_LONG).show();
                         }
                     }
                 });
@@ -81,7 +81,8 @@ public class SignInActivity extends AppCompatActivity {
         overridePendingTransition(0, 0);
         finish();
     }
-    public void back(View view){
+
+    public void back(View view) {
         onBackPressed();
     }
 

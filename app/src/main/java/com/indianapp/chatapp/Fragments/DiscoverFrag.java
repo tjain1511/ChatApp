@@ -1,7 +1,6 @@
 package com.indianapp.chatapp.Fragments;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +16,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.indianapp.chatapp.Adapters.AllUsersAdapter;
 import com.indianapp.chatapp.Models.UserModel;
@@ -36,6 +36,9 @@ public class DiscoverFrag extends Fragment {
 
     private RecyclerView recyclerView;
     private View rootView;
+
+    private DatabaseReference reference;
+    private ChildEventListener childEventListener;
 
     @Nullable
     @Override
@@ -61,7 +64,8 @@ public class DiscoverFrag extends Fragment {
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
 
-        db.getReference().child("users").addChildEventListener(new ChildEventListener() {
+        reference = db.getReference().child("users");
+        childEventListener = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 if (!set.contains(snapshot.getKey())) {
@@ -96,6 +100,11 @@ public class DiscoverFrag extends Fragment {
             public void onCancelled(@NonNull DatabaseError error) {
 
             }
-        });
+        };
+        reference.addChildEventListener(childEventListener);
+    }
+    public void onDestroy() {
+        reference.removeEventListener(childEventListener);
+        super.onDestroy();
     }
 }

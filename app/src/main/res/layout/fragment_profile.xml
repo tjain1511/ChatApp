@@ -152,16 +152,19 @@
                 app:layout_constraintTop_toTopOf="@+id/userName"
                 app:srcCompat="@drawable/ic_pen" />
 
-            <ImageView
-                android:id="@+id/updateEmail"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginEnd="25dp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="@+id/emailId"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/emailId"
-                app:srcCompat="@drawable/ic_pen" />
+            <TextView
+                android:id="@+id/uploading_prof"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/helvetica_bold"
+                android:text="Uploading...."
+                android:textColor="@color/cardview_dark_background"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/userImg"
+                app:layout_constraintEnd_toEndOf="@+id/userImg"
+                app:layout_constraintStart_toStartOf="@+id/userImg"
+                app:layout_constraintTop_toTopOf="parent" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 

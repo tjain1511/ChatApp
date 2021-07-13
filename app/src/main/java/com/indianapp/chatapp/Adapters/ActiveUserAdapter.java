@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.indianapp.chatapp.Activities.ChatActivity;
-import com.indianapp.chatapp.Activities.ImageAcitvity;
+import com.indianapp.chatapp.Activities.ImageActivity;
 import com.indianapp.chatapp.Models.UserModel;
 import com.indianapp.chatapp.R;
 
@@ -79,7 +79,7 @@ public class ActiveUserAdapter extends RecyclerView.Adapter<ActiveUserAdapter.Vi
         holder.image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(ctx, ImageAcitvity.class);
+                Intent intent = new Intent(ctx, ImageActivity.class);
                 intent.putExtra("username", userModel.getUsername());
                 intent.putExtra("imageUrl", userModel.getImageUrl());
                 ctx.startActivity(intent);

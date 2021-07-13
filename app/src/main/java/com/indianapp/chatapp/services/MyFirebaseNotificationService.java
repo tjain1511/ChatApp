@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.speech.tts.TextToSpeech;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -18,11 +17,8 @@ import com.google.firebase.messaging.RemoteMessage;
 import com.indianapp.chatapp.Activities.ChatActivity;
 import com.indianapp.chatapp.R;
 
-import java.util.Locale;
-
 public class MyFirebaseNotificationService extends FirebaseMessagingService {
     private SharedPreferences preferences;
-    private TextToSpeech t;
 
     @Override
     public void onNewToken(@NonNull String s) {
@@ -40,17 +36,6 @@ public class MyFirebaseNotificationService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        t= new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int i) {
-                if(i != TextToSpeech.ERROR) {
-                    t.setLanguage(Locale.UK);
-                }
-            }
-        });
-        t.speak("hello",TextToSpeech.QUEUE_FLUSH,null,null);
-        t.speak("hello",TextToSpeech.QUEUE_FLUSH,null);
-
         preferences = this.getSharedPreferences("com.indianapp.chatapp", Context.MODE_PRIVATE);
         if (!preferences.getString("user", "null").equals(remoteMessage.getData().get("senderId").toString())) {
             addNotification(remoteMessage.getNotification().getTitle(), remoteMessage.getNotification().getBody(),

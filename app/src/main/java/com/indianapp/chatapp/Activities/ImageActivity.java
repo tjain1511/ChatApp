@@ -15,7 +15,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 import com.indianapp.chatapp.R;
 
-public class ImageAcitvity extends AppCompatActivity {
+public class ImageActivity extends AppCompatActivity {
     private ImageView img;
     private TextView textView;
     private FirebaseUser currentUser;
@@ -24,7 +24,7 @@ public class ImageAcitvity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_image_acitvity);
+        setContentView(R.layout.activity_image);
         getWindow().setStatusBarColor(Color.parseColor("#000000"));
         db = FirebaseDatabase.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -49,10 +49,11 @@ public class ImageAcitvity extends AppCompatActivity {
         overridePendingTransition(0, 0);
         finish();
     }
+
     @Override
     protected void onPause() {
         db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("offline");
-        Log.i("pass","paused");
+        Log.i("pass", "paused");
         super.onPause();
     }
 

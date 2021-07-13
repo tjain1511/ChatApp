@@ -15,6 +15,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.indianapp.chatapp.Fragments.ActiveUsersFrag;
@@ -31,6 +32,10 @@ public class BottomActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
     private FirebaseDatabase db;
+    private DatabaseReference ref0;
+    private DatabaseReference ref1;
+    private ChildEventListener childEventListener0;
+    private ChildEventListener childEventListener1;
 
     public static void showBadge(int n) {
         if (n <= 0) {
@@ -52,12 +57,12 @@ public class BottomActivity extends AppCompatActivity {
         db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("online");
         db.getReference().child("users").child(currentUser.getUid()).child("lastSeen").setValue(ServerValue.TIMESTAMP);
 
-
-        db.getReference().child("users").child(currentUser.getUid()).child("activeUsers").addChildEventListener(new ChildEventListener() {
+        childEventListener0 = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 String receiverId = snapshot.getKey().toString();
-                db.getReference().child("chatRoom").child(receiverId + currentUser.getUid()).addChildEventListener(new ChildEventListener() {
+                ref1 = db.getReference().child("chatRoom").child(receiverId + currentUser.getUid());
+                childEventListener1 = new ChildEventListener() {
                     @Override
                     public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                         String messageStatus = snapshot.child("messageStatus").getValue().toString();
@@ -86,7 +91,8 @@ public class BottomActivity extends AppCompatActivity {
                     public void onCancelled(@NonNull DatabaseError error) {
 
                     }
-                });
+                };
+                ref1.addChildEventListener(childEventListener1);
             }
 
             @Override
@@ -108,7 +114,9 @@ public class BottomActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) {
 
             }
-        });
+        };
+        ref0 = db.getReference().child("users").child(currentUser.getUid()).child("activeUsers");
+        ref0.addChildEventListener(childEventListener0);
         chipNavigationBar = findViewById(R.id.chipNavigation);
         chipNavigationBar.setItemSelected(R.id.chats, true);
         getSupportFragmentManager().beginTransaction().replace(R.id.containers, new ActiveUsersFrag()).commit();
@@ -138,16 +146,19 @@ public class BottomActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-//        if(fragment!=null) {
-//            db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("offline");
-//        }
+        if (ActiveUsersFrag.query != null)
+            ActiveUsersFrag.query.removeEventListener(ActiveUsersFrag.childEventListener);
+        if (ref1 != null)
+            ref1.removeEventListener(childEventListener1);
+        if (ref0 != null)
+            ref0.removeEventListener(childEventListener0);
         super.onDestroy();
     }
 
     @Override
     protected void onPause() {
         db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("offline");
-        Log.i("pass","paused");
+        Log.i("onPause", "bott");
         super.onPause();
     }
 
@@ -166,7 +177,6 @@ public class BottomActivity extends AppCompatActivity {
         } else {
             db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("online");
             Intent intent = new Intent(getApplicationContext(), BottomActivity.class);
-
             startActivity(intent);
             overridePendingTransition(0, 0);
             finish();

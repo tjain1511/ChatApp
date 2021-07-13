@@ -1,9 +1,7 @@
 package com.indianapp.chatapp.Fragments;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -18,6 +16,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -38,11 +37,12 @@ import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.indianapp.chatapp.Activities.ImageAcitvity;
+import com.indianapp.chatapp.Activities.ImageActivity;
 import com.indianapp.chatapp.Activities.MainActivity;
 import com.indianapp.chatapp.Activities.ResetPasswordActivity;
 import com.indianapp.chatapp.R;
@@ -59,11 +59,11 @@ public class ProfileFrag extends Fragment {
 
     private TextView username;
     private TextView emailId;
+    private TextView uploading;
 
     private CircleImageView userImage;
     private ImageView updateImg;
     private ImageView updateName;
-    private ImageView updateEmail;
 
     private Button logOut;
     private Button resetPassword;
@@ -77,6 +77,11 @@ public class ProfileFrag extends Fragment {
 
     private Uri imageUrl;
 
+    private DatabaseReference reference;
+    private ChildEventListener childEventListener;
+    private DatabaseReference reference1;
+    private ChildEventListener childEventListener1;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -87,15 +92,15 @@ public class ProfileFrag extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        updateEmail = rootView.findViewById(R.id.updateEmail);
         updateName = rootView.findViewById(R.id.updateName);
         userImage = rootView.findViewById(R.id.userImg);
+        uploading = rootView.findViewById(R.id.uploading_prof);
         updateImg = rootView.findViewById(R.id.updateImg);
         username = rootView.findViewById(R.id.userName);
         emailId = rootView.findViewById(R.id.emailId);
         logOut = rootView.findViewById(R.id.logOut);
         resetPassword = rootView.findViewById(R.id.resetPassword);
-        
+
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
         firebaseStorage = FirebaseStorage.getInstance();
@@ -112,9 +117,9 @@ public class ProfileFrag extends Fragment {
         userImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), ImageAcitvity.class);
-                intent.putExtra("username",currentUser.getDisplayName());
-                intent.putExtra("imageUrl",currentUser.getPhotoUrl().toString());
+                Intent intent = new Intent(getActivity(), ImageActivity.class);
+                intent.putExtra("username", currentUser.getDisplayName());
+                intent.putExtra("imageUrl", currentUser.getPhotoUrl().toString());
                 startActivity(intent);
             }
         });
@@ -122,15 +127,20 @@ public class ProfileFrag extends Fragment {
             @Override
             public void onClick(View view) {
                 db.getReference().child("users").child(currentUser.getUid()).child("status").setValue("offline")
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        mAuth.signOut();
-                        intent = new Intent(getActivity(), MainActivity.class);
-                        startActivity(intent);
-                        getActivity().finish();
-                    }
-                });
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if (task.isSuccessful()) {
+                                    mAuth.signOut();
+                                    Toast.makeText(getActivity(), "Logging out...", Toast.LENGTH_SHORT).show();
+                                    intent = new Intent(getActivity(), MainActivity.class);
+                                    startActivity(intent);
+                                    getActivity().finish();
+                                } else {
+                                    Toast.makeText(getActivity(), "Some error occurred", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
 
             }
         });
@@ -139,36 +149,32 @@ public class ProfileFrag extends Fragment {
             public void onClick(View view) {
                 intent = new Intent(getActivity(), ResetPasswordActivity.class);
                 startActivity(intent);
+                getActivity().overridePendingTransition(0, 0);
             }
         });
         updateImg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-               someActivityResultLauncher.launch(intent);
-            }
-        });
-        updateEmail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showDialog(emailId,"Email");
+                someActivityResultLauncher.launch(intent);
             }
         });
         updateName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showDialog(username,"Username");
+                showDialog(username, "Username");
             }
         });
     }
-    public void showDialog(TextView textView,String string){
+
+    public void showDialog(TextView textView, String string) {
         final Dialog dialog = new Dialog(getActivity());
-        dialog.setContentView(R.layout.edit_dialog );
+        dialog.setContentView(R.layout.edit_dialog);
         TextView title = dialog.findViewById(R.id.title_edit);
         EditText edit = dialog.findViewById(R.id.edit_info);
         TextView cancel = dialog.findViewById(R.id.cancel_button);
         TextView save = dialog.findViewById(R.id.save_button);
-        title.setText("Enter your "+string);
+        title.setText("Enter your " + string);
         edit.setText(textView.getText().toString());
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,52 +185,57 @@ public class ProfileFrag extends Fragment {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(string.equals("Username")){
+                if (string.equals("Username")) {
                     UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                             .setDisplayName(edit.getText().toString())
                             .build();
                     currentUser.updateProfile(profileUpdates).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
-                            textView.setText(currentUser.getDisplayName());
-                            db.getReference().child("users").child(currentUser.getUid())
-                                    .child("username").setValue(edit.getText().toString());
-                            db.getReference().child("users").child(currentUser.getUid())
-                                    .child("activeUsers").addChildEventListener(new ChildEventListener() {
-                                @Override
-                                public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                                    db.getReference().child("users").child(snapshot.getKey())
-                                            .child("activeUsers").child(currentUser.getUid()).child("username").setValue(edit.getText().toString());
-                                }
+                            if (task.isSuccessful()) {
+                                db.getReference().child("users").child(currentUser.getUid())
+                                        .child("username").setValue(edit.getText().toString());
+                                reference = db.getReference().child("users").child(currentUser.getUid()).child("activeUsers");
+                                childEventListener = new ChildEventListener() {
+                                    @Override
+                                    public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                        db.getReference().child("users").child(snapshot.getKey())
+                                                .child("activeUsers").child(currentUser.getUid()).child("username").setValue(edit.getText().toString());
+                                    }
 
-                                @Override
-                                public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                    @Override
+                                    public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
 
-                                }
+                                    }
 
-                                @Override
-                                public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                                    @Override
+                                    public void onChildRemoved(@NonNull DataSnapshot snapshot) {
 
-                                }
+                                    }
 
-                                @Override
-                                public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                    @Override
+                                    public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
 
-                                }
+                                    }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
 
-                                }
-                            });
+                                    }
+
+                                };
+                                textView.setText(currentUser.getDisplayName());
+                                Toast.makeText(getActivity(), "Username Updated", Toast.LENGTH_SHORT).show();
+                                db.getReference().child("users").child(currentUser.getUid())
+                                        .child("activeUsers").addChildEventListener(childEventListener);
+                            } else {
+                                Toast.makeText(getActivity(), "Some Error occurred", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
-                }else if(string.equals("Email")){
-                    currentUser.updateEmail(edit.getText().toString());
-                    db.getReference().child("users").child(currentUser.getUid())
-                            .child("email").setValue(edit.getText().toString());
-                    textView.setText(currentUser.getEmail());
                 }
+
+
                 dialog.dismiss();
             }
         });
@@ -232,12 +243,16 @@ public class ProfileFrag extends Fragment {
         dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         dialog.show();
     }
+
     ActivityResultLauncher<Intent> someActivityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
+                        uploading.setVisibility(View.VISIBLE);
+                        updateImg.setVisibility(View.INVISIBLE);
+                        userImage.setVisibility(View.INVISIBLE);
                         Intent data = result.getData();
                         Uri selectImage = data.getData();
                         Bitmap bitmap = null;
@@ -250,57 +265,77 @@ public class ProfileFrag extends Fragment {
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
                         byte[] byteArray = stream.toByteArray();
                         StorageReference reference = firebaseStorage.getReference().child("userImages").child(String.valueOf(UUID.randomUUID()));
+                        Bitmap finalBitmap = bitmap;
                         reference.putBytes(byteArray).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                 reference.getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
                                     @Override
                                     public void onComplete(@NonNull Task<Uri> task) {
-                                        imageUrl = task.getResult();
-                                        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                                .setPhotoUri(imageUrl)
-                                                .build();
-                                        currentUser.updateProfile(profileUpdates).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<Void> task) {
-                                                db.getReference().child("users").child(currentUser.getUid())
-                                                        .child("imageUrl").setValue(imageUrl.toString());
-                                                db.getReference().child("users").child(currentUser.getUid())
-                                                        .child("activeUsers").addChildEventListener(new ChildEventListener() {
-                                                    @Override
-                                                    public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                                                        db.getReference().child("users").child(snapshot.getKey())
-                                                                .child("activeUsers").child(currentUser.getUid()).child("imageUrl").setValue(imageUrl.toString());
-                                                    }
+                                        if (task.isSuccessful()) {
+                                            imageUrl = task.getResult();
+                                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                                    .setPhotoUri(imageUrl)
+                                                    .build();
+                                            currentUser.updateProfile(profileUpdates).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    db.getReference().child("users").child(currentUser.getUid())
+                                                            .child("imageUrl").setValue(imageUrl.toString());
+                                                    reference1 = db.getReference().child("users").child(currentUser.getUid()).child("activeUsers");
+                                                    childEventListener1 = new ChildEventListener() {
+                                                        @Override
+                                                        public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                                            db.getReference().child("users").child(snapshot.getKey())
+                                                                    .child("activeUsers").child(currentUser.getUid()).child("imageUrl").setValue(imageUrl.toString());
+                                                        }
 
-                                                    @Override
-                                                    public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                                        @Override
+                                                        public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
 
-                                                    }
+                                                        }
 
-                                                    @Override
-                                                    public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                                                        @Override
+                                                        public void onChildRemoved(@NonNull DataSnapshot snapshot) {
 
-                                                    }
+                                                        }
 
-                                                    @Override
-                                                    public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                                                        @Override
+                                                        public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
 
-                                                    }
+                                                        }
 
-                                                    @Override
-                                                    public void onCancelled(@NonNull DatabaseError error) {
+                                                        @Override
+                                                        public void onCancelled(@NonNull DatabaseError error) {
 
-                                                    }
-                                                });
-                                            }
-                                        });
+                                                        }
+                                                    };
+                                                    reference1.addChildEventListener(childEventListener1);
+                                                }
+                                            });
+                                            userImage.setImageBitmap(finalBitmap);
+                                            userImage.setVisibility(View.VISIBLE);
+                                            uploading.setVisibility(View.INVISIBLE);
+                                            updateImg.setVisibility(View.VISIBLE);
+                                        } else {
+                                            Toast.makeText(getActivity(), "Some error occurred", Toast.LENGTH_LONG).show();
+                                        }
                                     }
                                 });
                             }
                         });
-                        userImage.setImageBitmap(bitmap);
                     }
                 }
             });
+
+    @Override
+    public void onDestroy() {
+        if (reference != null) {
+            reference.removeEventListener(childEventListener);
+        }
+        if (reference1 != null) {
+            reference1.removeEventListener(childEventListener1);
+        }
+        super.onDestroy();
+    }
 }

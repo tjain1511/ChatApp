@@ -87,6 +87,7 @@
                 android:layout_height="200dp"
                 android:layout_marginTop="20dp"
                 android:src="@drawable/blank_profile"
+                android:visibility="visible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView9" />
@@ -147,6 +148,19 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:srcCompat="@drawable/ic_baseline_arrow_back" />
+
+            <TextView
+                android:id="@+id/uploading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/helvetica_bold"
+                android:text="Uploading...."
+                android:textColorHighlight="@color/cardview_dark_background"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/imgView"
+                app:layout_constraintEnd_toEndOf="@+id/imgView"
+                app:layout_constraintStart_toStartOf="@+id/imgView"
+                app:layout_constraintTop_toTopOf="@+id/imgView" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>

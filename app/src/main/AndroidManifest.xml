@@ -13,7 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Design.Light.NoActionBar">
-        <activity android:name=".Activities.ImageAcitvity"></activity>
+        <activity android:name=".Activities.ImageActivity"></activity>
         <activity android:name=".Activities.ResetPasswordActivity" />
         <activity android:name=".Activities.BottomActivity" />
         <activity android:name=".Activities.SignUpActivity" />
